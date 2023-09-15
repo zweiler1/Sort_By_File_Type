@@ -44,12 +44,13 @@ echo
 
 search_for_type() {
     mkdir "$target_directory/$1" 2>/dev/null
-    echo "$1"
-    #echo "$source_directory"
-    #find "$source_directory" -name "*.$1" -exec bash -c 'mv "$0" "$target_directory/$1"' {} \;
-    find "$source_directory" -name "*.$1" -exec bash -c 'mv "$0" "$target_directory/$1/"' {} \;
+    type="$1"
+    export "target_directory"
+    export "type"
+    #find "$source_directory" -name "*.$1" -exec bash -c 'mv "$0" "$target_directory/$type/" && echo -e "Moved to ./$type: \t\t$0"' {} \;
+    find "$source_directory" -name "*.$1" -exec bash -c 'mv "$0" "$target_directory/$type/" && echo -e "Verschoben nach ./$type: \t\t$0"' {} \;
 }
-$0
+
 # Le searching
 "$search_for_images" && for type in "${types_images[@]}"; do search_for_type "$type"; done
 "$search_for_videos" && for type in "${types_videos[@]}"; do search_for_type "$type"; done
