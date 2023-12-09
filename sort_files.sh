@@ -27,6 +27,11 @@ read -r target_directory
 target_directory="${target_directory%%/}"
 echo
 
+echo "Möchten Sie kopieren (C) oder verschieben (M) (Default: Move): "
+read -r copy_files
+echo
+[ "$copy_files" = "C" ] || [ "$copy_files" = "c" ] || [ "$copy_files" = "J" ] || [ "$copy_files" = "j" ] && copy_files=true || copy_files=false
+
 #echo "Do you want to search for image files? Y/n"
 echo "Möchten Sie nach Bildern suchen? J/n"
 read -r search_for_images
@@ -51,22 +56,24 @@ read -r delete_empty_dirs
 echo
 [ "$delete_empty_dirs" = "J" ] || [ "$delete_empty_dirs" = "j" ] || [ "$delete_empty_dirs" = "Y" ] || [ "$delete_empty_dirs" = "y" ] || [ "$delete_empty_dirs" = "" ] && delete_empty_dirs=true || delete_empty_dirs=false
 
+check_for_dates() {
+    #echo "Specify the start date"
+    echo "Geben Sie bitte das Start-Datum an, ab welchem gefiltert wird: (YY-MM-DD)"
+    read -r start_date
+    echo
+
+    #echo "Specify the end date"
+    echo "Geben Sie bitte das End-Datum an, bis zu welchem gefiltert wird: (YY-MM-DD)"
+    read -r end_date
+    echo
+}
+
 #echo "Do you want to filter out only files from a specific date range? Y/n"
 echo "Möchten Sie nur Dateien zwischen einem bestimmten Datum filtern? J/n"
 read -r filter_dates
 echo
 [ "$filter_dates" = "J" ] || [ "$filter_dates" = "j" ] || [ "$filter_dates" = "Y" ] || [ "$filter_dates" = "y" ] || [ "$filter_dates" = "" ] && filter_dates=true || filter_dates=false
 "$filter_dates" && check_for_dates
-
-check_for_dates() {
-    #echo "Specify the start date"
-    echo "Geben Sie bitte das Start-Datum an, ab welchem gefiltert wird: (DD-MM-YYYY)"
-    read -r start_date
-
-    #echo "Specify the end date"
-    echo "Geben Sie bitte das End-Datum an, bis zu welchem gefiltert wird: (DD_MM-YYYY)"
-    read -r end_date
-}
 
 search_for_type() {
     mkdir "$target_directory/$1" 2>/dev/null
@@ -77,23 +84,33 @@ search_for_type() {
         mapfile -d $'\0' files < <(find "$source_directory" -name "*.$1" -print0)
 
         for file in "${files[@]}"; do
-            file_date=$(date -r "$file" "+%d-%m-%y")
-            if [[ $(date -d "$file_date" +%s) > $(date -d "$start_date" +%s) && $(date -d "$file_date" +%s) < $(date -d "$end_date" +%s) ]]; then
-                mv "$file" "$target_directory/$1/$directory_name" && echo -e "Verschoben nach ./$1: \t\t$file"
+            file_date=$(date -r "$file" "+%y-%m-%d")
+            if [[ $(date -d "$file_date" +%s) -ge $(date -d "$start_date" +%s) && $(date -d "$file_date" +%s) -le $(date -d "$end_date" +%s) ]]; then
+                if [[ "$copy_files" ]]; then
+                    cp "$file" "$target_directory/$1/$directory_name" && echo -e "Verschoben nach $target_directory/$1: \t\t$file"
+                else
+                    mv "$file" "$target_directory/$1/$directory_name" && echo -e "Verschoben nach $target_directory/$1: \t\t$file"
+                fi
             fi
         done
     else
-        find "$source_directory" -name "*.$1" -exec bash -c 'mv "$0" "$target_directory/$1/" && echo -e "Verschoben nach ./$1: \t\t$0"' {} \;
+        if [[ "$copy_files" ]]; then
+            find "$source_directory" -name "*.$1" -exec bash -c 'cp "$0" "$target_directory/$1/" && echo -e "Verschoben nach ./$1: \t\t$0"' {} \;
+        else 
+            find "$source_directory" -name "*.$1" -exec bash -c 'mv "$0" "$target_directory/$1/" && echo -e "Verschoben nach ./$1: \t\t$0"' {} \;
+        fi
     fi
 }
 
 delete_empty_directories() {
-    find . -type d -empty -print
-    echo "Möchten Sie diese Ordner löschen? J/n"
+    echo
+    echo "Möchten Sie diese Ordner: "
+    find "$target_directory" -type d -empty -print
+    echo "löschen? J/n: "
     read -r apply_deletion
     echo
     [ "$apply_deletion" = "J" ] || [ "$apply_deletion" = "j" ] || [ "$apply_deletion" = "Y" ] || [ "$apply_deletion" = "y" ] || [ "$apply_deletion" = "" ] && apply_deletion=true || apply_deletion=false
-    "$apply_deletion" && find . -type d -empty -delete
+    "$apply_deletion" && find "$target_directory" -type d -empty -delete
 }
 
 # Le searching
