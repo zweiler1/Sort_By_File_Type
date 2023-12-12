@@ -87,9 +87,9 @@ search_for_type() {
             file_date=$(date -r "$file" "+%y-%m-%d")
             if [[ $(date -d "$file_date" +%s) -ge $(date -d "$start_date" +%s) && $(date -d "$file_date" +%s) -le $(date -d "$end_date" +%s) ]]; then
                 if [[ "$copy_files" ]]; then
-                    cp "$file" "$target_directory/$1/$directory_name" && echo -e "Verschoben nach $target_directory/$1: \t\t$file"
+                    cp "$file" "$target_directory/$directory_name" && echo -e "Verschoben nach $target_directory: \t\t$file"
                 else
-                    mv "$file" "$target_directory/$1/$directory_name" && echo -e "Verschoben nach $target_directory/$1: \t\t$file"
+                    mv "$file" "$target_directory/$directory_name" && echo -e "Verschoben nach $target_directory: \t\t$file"
                 fi
             fi
         done
@@ -104,13 +104,16 @@ search_for_type() {
 
 delete_empty_directories() {
     echo
-    echo "Möchten Sie diese Ordner: "
+    echo "Möchten Sie diese Ordner "
+    echo "im Quellordner: "
+    find "$source_directory" -type d -empty -print
+    echo "im Zielordner: "
     find "$target_directory" -type d -empty -print
     echo "löschen? J/n: "
     read -r apply_deletion
     echo
     [ "$apply_deletion" = "J" ] || [ "$apply_deletion" = "j" ] || [ "$apply_deletion" = "Y" ] || [ "$apply_deletion" = "y" ] || [ "$apply_deletion" = "" ] && apply_deletion=true || apply_deletion=false
-    "$apply_deletion" && find "$target_directory" -type d -empty -delete
+    "$apply_deletion" && find "$target_directory" -type d -empty -delete && find "$source_directory" -type d -empty -delete
 }
 
 # Le searching
